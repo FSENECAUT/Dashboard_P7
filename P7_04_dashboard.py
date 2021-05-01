@@ -11,7 +11,7 @@ from joblib import dump, load
 import assets.fonctions_P7 as fct
 import plotly.express as px
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 server = app.server
 
 navbar = dbc.NavbarSimple(
