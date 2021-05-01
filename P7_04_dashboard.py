@@ -12,6 +12,7 @@ import assets.fonctions_P7 as fct
 import plotly.express as px
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+server = app.server
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -141,10 +142,10 @@ def toggle_sidebar(n, nclick):
 
 # Contenu commun aux 3 pages
 # Intégration des dataset avec choix du nombre de lignes via paramètre nrows)
-description_client = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\train_3.csv', nrows=1000, sep=',', index_col=0)
-description_client_2 = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\test_3.csv', nrows=1000, sep=',', index_col=0)
-coefs = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\coefs.csv', sep=',', index_col=0)  
-description_client_22 = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\test_3_scoring.csv', nrows=1000, sep=',', index_col=0)
+#description_client = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\train_3.csv', nrows=1000, sep=',', index_col=0)
+#description_client_2 = pd.read_csv('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\test_3.csv', nrows=1000, sep=',', index_col=0)
+coefs = pd.read_csv('coefs.csv', sep=',', index_col=0)  
+description_client_22 = pd.read_csv('test_3_scoring.csv', nrows=1000, sep=',', index_col=0)
 
 def generate_table(dataframe, cols, max_rows=1):
     # Génére une table composée d'une ligne (max_rows=1)
@@ -161,8 +162,8 @@ def generate_table(dataframe, cols, max_rows=1):
     ])
 
 ### Contenu de la page 1
-description_client_2['YEARS_BIRTH']=round(-description_client_2['DAYS_BIRTH']/365,0)
-description_client_2['YEARS_EMPLOYED']=round(-description_client_2['DAYS_EMPLOYED']/365,0)
+description_client_22['YEARS_BIRTH']=round(-description_client_22['DAYS_BIRTH']/365,0)
+description_client_22['YEARS_EMPLOYED']=round(-description_client_22['DAYS_EMPLOYED']/365,0)
 mask_identification=['SK_ID_CURR', 'CODE_GENDER', 'YEARS_BIRTH', 'NAME_EDUCATION_TYPE', 'NAME_FAMILY_STATUS', 'CNT_FAM_MEMBERS', 'CNT_CHILDREN']
 mask_revenu=['NAME_INCOME_TYPE', 'AMT_INCOME_TOTAL', 'YEARS_EMPLOYED', 'NAME_HOUSING_TYPE', 'REGION_POPULATION_RELATIVE']
 mask_revenu_par_pers=['INCOME_PER_PERSON']
@@ -192,7 +193,7 @@ page_1_layout = html.Div(
                             id='filtre_client',
                             options=[
                                 {'label': i, 'value': i}
-                                for i in np.sort(description_client_2['SK_ID_CURR'].unique())                            
+                                for i in np.sort(description_client_22['SK_ID_CURR'].unique())                            
                                 ],
                             value=100001,
                             clearable=False,
@@ -238,16 +239,16 @@ page_1_layout = html.Div(
 )
 def update_rows(Id_client):
     # Génére les différentes cellules contenant les valeurs du client
-    data = description_client_2[description_client_2['SK_ID_CURR'] == Id_client]
+    data = description_client_22[description_client_22['SK_ID_CURR'] == Id_client]
     return generate_table(data, mask_identification), generate_table(data, mask_revenu), generate_table(data, mask_revenu_par_pers), generate_table(data, mask_dm_pret)
 # FIN PAGE 1   
 
 # Contenu page 2
 ### Rapppel du modèle exporté 
-reglog_ponderation = load('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\reglog1_pondération.joblib', mmap_mode=None)
+reglog_ponderation = load('reglog1_pondération.joblib', mmap_mode=None)
 ### Preparation des donnees
 # Rappel du pipe de préparation des variables
-pipe_prep = load('D:\documents\(2) OPENCLASSROOMS\PROJET 7\data\\pipe_preparation_variable1.joblib', mmap_mode=None)
+pipe_prep = load('pipe_preparation_variable1.joblib', mmap_mode=None)
 # Création de masque pour les callback
 mask_scoring_proba = ['SCORE_PROBA']
 mask_scoring_decision = ['DECISION']
@@ -326,7 +327,7 @@ page_2_layout = html.Div(
                     id='filtre_client',
                     options=[
                         {'label': i, 'value': i}
-                        for i in np.sort(description_client_2['SK_ID_CURR'].unique())                            
+                        for i in np.sort(description_client_22['SK_ID_CURR'].unique())                            
                         ],
                     value=100001,
                     clearable=False,
@@ -369,8 +370,8 @@ page_2_layout = html.Div(
 )
 def update_rows(id_client):
     # 
-    data = description_client_2[description_client_2['SK_ID_CURR'] == id_client]
-    data_prep = pipe_prep.transform(data.iloc[:,1:-2])
+    data = description_client_22[description_client_22['SK_ID_CURR'] == id_client]
+    data_prep = pipe_prep.transform(data.iloc[:,1:-4])
     pred_model, Y_pred = fct.prediction_modele(reglog_ponderation, data_prep) # Y_pred donne les labels, pred_model donne la probailité d'appartenance à chaque classe
     data['SCORE_PROBA'] = pred_model[:, 1]
     data['SCORING'] = Y_pred
@@ -488,7 +489,7 @@ def update_graph(id_client, var):
                     'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': description_client_22[var].mean()}}
             )
         )
-        fig2 = px.box(description_client_2, y=var)
+        fig2 = px.box(description_client_22, y=var)
         modalite=None 
     return modalite, fig1, fig2
 # FIN PAGE 3
